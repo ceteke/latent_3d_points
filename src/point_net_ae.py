@@ -42,7 +42,7 @@ class PointNetAutoEncoder(AutoEncoder):
                 layer = tf.nn.tanh(layer)
 
             self.x_reconstr = tf.reshape(layer, [-1, self.n_output[0], self.n_output[1]])
-            
+
             self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=c.saver_max_to_keep)
 
             self._create_loss()
@@ -56,10 +56,6 @@ class PointNetAutoEncoder(AutoEncoder):
 
             config = tf.ConfigProto()
             config.gpu_options.allow_growth = growth
-
-            # Summaries
-            self.merged_summaries = tf.summary.merge_all()
-            self.train_writer = tf.summary.FileWriter(osp.join(configuration.train_dir, 'summaries'), self.graph)
 
             # Initializing the tensor flow variables
             self.init = tf.global_variables_initializer()
@@ -96,7 +92,9 @@ class PointNetAutoEncoder(AutoEncoder):
             tf.summary.scalar('learning_rate', self.lr)
 
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.lr)
-        self.train_step = self.optimizer.minimize(self.loss)
+        tf.summary.scalar('loss', self.loss)
+        self.train_step = self.optimizer.minimize(self.loss, global_step=self.global_step)
+        self.merged_summaries = tf.summary.merge_all()
 
     def _single_epoch_train(self, train_data, configuration, only_fw=False):
         n_examples = train_data.num_examples

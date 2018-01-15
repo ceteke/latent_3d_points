@@ -93,7 +93,9 @@ class AutoEncoder(Neural_Net):
         self.is_denoising = configuration.is_denoising
         self.n_input = configuration.n_input
         self.n_output = configuration.n_output
-
+        self.global_step = tf.Variable(0, trainable=False)
+        # Summaries
+        self.train_writer = tf.summary.FileWriter(osp.join(configuration.train_dir, 'summaries'), self.graph)
         in_shape = [None] + self.n_input
         out_shape = [None] + self.n_output
 
@@ -126,10 +128,10 @@ class AutoEncoder(Neural_Net):
         is_training(True, session=self.sess)
         try:
             if GT is not None:
-                _, loss, recon = self.sess.run((self.train_step, self.loss, self.x_reconstr), feed_dict={self.x: X, self.gt: GT})
+                _, loss, recon, gs, ms = self.sess.run((self.train_step, self.loss, self.x_reconstr, self.global_step, self.merged_summaries), feed_dict={self.x: X, self.gt: GT})
             else:
-                _, loss, recon = self.sess.run((self.train_step, self.loss, self.x_reconstr), feed_dict={self.x: X})
-
+                _, loss, recon, gs, ms = self.sess.run((self.train_step, self.loss, self.x_reconstr, self.global_step, self.merged_summaries), feed_dict={self.x: X})
+            self.train_writer.add_summary(ms, gs)
             is_training(False, session=self.sess)
         except Exception:
             raise
